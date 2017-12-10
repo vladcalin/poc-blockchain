@@ -10,7 +10,8 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'wallet = blockchain.cli.wallet:cli'
+            'wallet = blockchain.cli.wallet:cli',
+            'netnode = blockchain.cli.node:cli'
         ]
     }
 )
