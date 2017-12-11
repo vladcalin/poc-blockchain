@@ -6,6 +6,8 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
 
+from blockchain.block.content.base import BaseContent
+
 TX_REPR = """Transaction:
     - id:       {}
     - sender:   {}
@@ -21,9 +23,45 @@ SIGNED_TX_REPR = """SignedTransaction:
 """
 
 
-class SignedTransaction(object):
+class TransactionSigner(object):
+    def __init__(self):
+        pass
+
+    def sign(self, tx, private_key, public_key, password=None):
+        private_key = serialization.load_pem_private_key(
+            private_key.encode(),
+            password=password.encode(),
+            backend=default_backend()
+        )
+        message = tx.to_binary()
+        signature = private_key.sign(
+            message,
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.MAX_LENGTH
+            ),
+            hashes.SHA256()
+        )
+        signature = signature.hex()
+        public_key = public_key.encode().hex()
+        return SignedTransaction(tx, signature, public_key)
+
+    def verify(self, signed_tx):
+        public_key_from_pem = load_pem_public_key(signed_tx.public_key.encode(),
+                                                  default_backend())
+        message = signed_tx.tx.to_binary()
+        public_key_from_pem.verify(signed_tx.signature,
+                                   message,
+                                   padding.PSS(
+                                       mgf=padding.MGF1(hashes.SHA256()),
+                                       salt_length=padding.PSS.MAX_LENGTH
+                                   ),
+                                   hashes.SHA256())
+
+
+class SignedTransaction(BaseContent):
     """A signed transaction
-    
+
     Attributes:
         tx (Transaction):
             The transaction that is signed
@@ -34,86 +72,24 @@ class SignedTransaction(object):
             available. Is a hex string
     """
 
-    def __init__(self, tx):
+    def __init__(self, tx, signature, pub_key):
         """Wraps a transaction
-        
+
         Args:
             tx (Transaction):
                 The transaction that is signed
         """
         self.tx = tx
-        self.sig = None
-        self.pub_key = None
-
-    def sign(self, private_key, public_key, password=None):
-        private_key = serialization.load_pem_private_key(
-            private_key.encode(),
-            password=password.encode(),
-            backend=default_backend()
-        )
-        message = self.tx.to_binary()
-        signature = private_key.sign(
-            message,
-            padding.PSS(
-                mgf=padding.MGF1(hashes.SHA256()),
-                salt_length=padding.PSS.MAX_LENGTH
-            ),
-            hashes.SHA256()
-        )
-        self.sig = signature.hex()
-        self.pub_key = public_key.encode().hex()
-
-        public_key_from_pem = load_pem_public_key(public_key.encode(),
-                                                  default_backend())
-        public_key_from_pem.verify(signature,
-                                   message,
-                                   padding.PSS(
-                                       mgf=padding.MGF1(hashes.SHA256()),
-                                       salt_length=padding.PSS.MAX_LENGTH
-                                   ),
-                                   hashes.SHA256())
-
-    def verify(self):
-        public_key = bytes.fromhex(self.pub_key)
-        public_key_from_pem = load_pem_public_key(public_key,
-                                                  default_backend())
-        signature = bytes.fromhex(self.sig)
-        message = self.tx.to_binary()
-        public_key_from_pem.verify(signature,
-                                   message,
-                                   padding.PSS(
-                                       mgf=padding.MGF1(hashes.SHA256()),
-                                       salt_length=padding.PSS.MAX_LENGTH
-                                   ),
-                                   hashes.SHA256())
-
-    @classmethod
-    def from_tx(cls, tx, private_key, public_key, password=None):
-        signed = cls(tx)
-        signed.sign(private_key, public_key, password=password)
-        return signed
+        self.signature = signature
+        self.pub_key = pub_key
 
     def __repr__(self):
         return SIGNED_TX_REPR.format(
-            self.tx, self.sig, self.pub_key
+            self.tx, self.signature, self.pub_key
         )
 
-    def to_binary(self):
-        parts = [self.tx.to_binary().decode(), self.sig, self.pub_key]
-        return ';'.join(parts).encode()
 
-    @classmethod
-    def from_binary(cls, binary):
-        parts = binary.split(b';')
-        tx_id, tx_sender, tx_receiver, tx_amount, tx_ts, sig, pubkey = parts
-        tx_bin = b';'.join([tx_id, tx_sender, tx_receiver, tx_amount, tx_ts])
-        tx = Transaction.from_binary(tx_bin)
-        instance = cls(tx)
-        instance.sig = sig
-        instance.pub_key = pubkey
-
-
-class Transaction(object):
+class Transaction(BaseContent):
     TS_FORMAT = '%Y-%m-%d %H:%M:%S:%f'
 
     def __init__(self, sender, receiver, amount, ts=None, id=None):

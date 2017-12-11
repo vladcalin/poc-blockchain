@@ -4,10 +4,12 @@ import os.path
 import click
 import sys
 
-from blockchain.transaction import Transaction, SignedTransaction
+from blockchain.block.content.transaction import Transaction, SignedTransaction, \
+    TransactionSigner
+from blockchain.network import STORAGE_WALLETS
 from blockchain.wallet import Wallet
 
-STORAGE = '.poc-blockchain'
+STORAGE = STORAGE_WALLETS
 
 
 @click.group()
@@ -93,10 +95,8 @@ def wallet_transaction_create(wallet, receiver, amount):
     )
     password = getpass.getpass('Wallet password: ')
     try:
-        signed_tx = SignedTransaction.from_tx(tx,
-                                              wallet.private_key,
-                                              wallet.public_key,
-                                              password=password)
+        signed_tx = TransactionSigner().sign(
+            tx, wallet.private_key, wallet.public_key, password=password)
     except Exception as e:
         click.echo(
             click.style('Unable to open wallet {}: {}'.format(wallet.name, e),

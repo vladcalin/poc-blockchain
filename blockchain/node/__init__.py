@@ -1,4 +1,4 @@
-import socketserver
+from .handler import Actions, NodeHandler
 
 
 class NodeDiscoveryStrategy(object):
@@ -8,12 +8,3 @@ class NodeDiscoveryStrategy(object):
 
 class UdpBroadcastDiscoveryStrategy(NodeDiscoveryStrategy):
     pass
-
-
-class Actions:
-    HELLO = 'hello'
-
-
-class NodeHandler(socketserver.BaseRequestHandler):
-    def handle(self):
-        pass

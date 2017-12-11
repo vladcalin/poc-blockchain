@@ -1,15 +1,21 @@
 import os.path
-import socketserver
 
 import click
+import logging
+
+import sys
 
 from blockchain.node import NodeHandler
+from blockchain.node.handler import NodeServer
+from blockchain.network import NETWORK_PORT, STORAGE_DATA
 
-STORAGE = os.path.join('.poc-blockchain', 'data')
+STORAGE = STORAGE_DATA
 if not os.path.isdir(STORAGE):
     os.makedirs(STORAGE, exist_ok=True)
-NETWORK_PORT = 63889
-NETWORK_BIND = '0.0.0.0'
+
+logger = logging.getLogger('blockchain')
+handler = logging.StreamHandler(sys.stdout)
+logger.addHandler(handler)
 
 
 @click.group()
@@ -18,9 +24,16 @@ def cli():
 
 
 @cli.command('start')
-def start():
-    with socketserver.ThreadingUDPServer((NETWORK_BIND, NETWORK_PORT),
-                                         NodeHandler) as node:
+@click.option('--log', type=click.Choice(
+    ('debug', 'info', 'warning', 'error', 'critical')), default='info')
+def start(log):
+    # init logging
+    log_level = getattr(logging, log.upper())
+    handler.setLevel(log_level)
+    logger.setLevel(log_level)
+
+    with NodeServer(('0.0.0.0', NETWORK_PORT), NodeHandler) as node:
+        logger.info('Starting node')
         node.serve_forever()
 
 

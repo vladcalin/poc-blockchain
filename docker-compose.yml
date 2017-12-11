@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  node1:
+    image: blockchain-node
+    volumes:
+      - ".:/code"
+  node2:
+    image: blockchain-node
+    volumes:
+      - ".:/code"
+  node3:
+    image: blockchain-node
+    volumes:
+      - ".:/code"
