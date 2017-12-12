@@ -1,12 +1,11 @@
 import os.path
+import sys
 
 import click
 import logging
+from gunicorn.app.base import Application
 
-import sys
-
-from blockchain.node import NodeHandler
-from blockchain.node.handler import NodeServer
+from blockchain.node.handler import app
 from blockchain.network import NETWORK_PORT, STORAGE_DATA
 
 STORAGE = STORAGE_DATA
@@ -32,9 +31,8 @@ def start(log):
     handler.setLevel(log_level)
     logger.setLevel(log_level)
 
-    with NodeServer(('0.0.0.0', NETWORK_PORT), NodeHandler) as node:
-        logger.info('Starting node')
-        node.serve_forever()
+    os.system('gunicorn -w 4 -b 0.0.0.0:{} blockchain.node.handler:app'.format(
+        NETWORK_PORT))
 
 
 if __name__ == '__main__':

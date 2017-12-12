@@ -51,7 +51,14 @@ class Blockchain(object):
 
     def get_peer_count(self):
         cursor = self.data.cursor()
-        cursor.execute('SELECT COUNT(ip) from peers')
+        cursor.execute('SELECT COUNT(ip) FROM peers')
         res = cursor.fetchone()
         cursor.close()
-        return res
+        return res[0]
+
+    def iter_peers(self):
+        cursor = self.data.cursor()
+        cursor.execute('SELECT ip FROM peers')
+        for peer in cursor.fetchall():
+            yield peer
+        cursor.close()

@@ -1,12 +1,14 @@
 import getpass
 import os.path
+import urllib.request
+import urllib.parse
 
 import click
 import sys
 
 from blockchain.block.content.transaction import Transaction, SignedTransaction, \
     TransactionSigner
-from blockchain.network import STORAGE_WALLETS
+from blockchain.network import STORAGE_WALLETS, NETWORK_PORT
 from blockchain.wallet import Wallet
 
 STORAGE = STORAGE_WALLETS
@@ -79,7 +81,9 @@ def wallet_transaction():
 @click.argument('wallet')
 @click.argument('receiver')
 @click.argument('amount', type=click.FLOAT)
-def wallet_transaction_create(wallet, receiver, amount):
+@click.option('--node', default='127.0.0.1')
+def wallet_transaction_create(wallet, receiver, amount, node):
+    node += ":{}".format(NETWORK_PORT)
     try:
         wallet_path = os.path.join(STORAGE, wallet + '.wallet')
         wallet = Wallet.load_from_file(wallet_path)
@@ -103,7 +107,14 @@ def wallet_transaction_create(wallet, receiver, amount):
                         fg='red'))
         sys.exit(-1)
     click.echo('Signed transaction')
-    print(signed_tx.to_binary())
+    data = signed_tx.to_binary()
+    url = urllib.parse.urljoin('http://' + node, '/transactions/create')
+    click.echo('Attempt to contact node ({})'.format(url))
+    req = urllib.request.Request(url, data=data)
+    resp = urllib.request.urlopen(req)
+    click.echo(click.style('Contacted node', fg='green'))
+    resp_data = resp.read()
+    click.echo('Node responded with: {}'.format(resp_data))
 
 
 if __name__ == '__main__':

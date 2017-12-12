@@ -13,5 +13,12 @@ setup(
             'wallet = blockchain.cli.wallet:cli',
             'netnode = blockchain.cli.node:cli'
         ]
+    },
+    extras_require={
+        'node': [
+            'flask',
+            'peewee',
+            'gunicorn'
+        ]
     }
 )

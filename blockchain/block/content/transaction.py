@@ -47,10 +47,12 @@ class TransactionSigner(object):
         return SignedTransaction(tx, signature, public_key)
 
     def verify(self, signed_tx):
-        public_key_from_pem = load_pem_public_key(signed_tx.public_key.encode(),
+        public_key_data = bytes.fromhex(signed_tx.pub_key)
+        public_key_from_pem = load_pem_public_key(public_key_data,
                                                   default_backend())
         message = signed_tx.tx.to_binary()
-        public_key_from_pem.verify(signed_tx.signature,
+        signature = bytes.fromhex(signed_tx.signature)
+        public_key_from_pem.verify(signature,
                                    message,
                                    padding.PSS(
                                        mgf=padding.MGF1(hashes.SHA256()),
@@ -65,7 +67,7 @@ class SignedTransaction(BaseContent):
     Attributes:
         tx (Transaction):
             The transaction that is signed
-        sig (str):
+        signature (str):
             The signature of the transaction, if available, as a hex string
         pub_key (str):
             The public key for verifying the transaction signature, if 
@@ -73,12 +75,7 @@ class SignedTransaction(BaseContent):
     """
 
     def __init__(self, tx, signature, pub_key):
-        """Wraps a transaction
-
-        Args:
-            tx (Transaction):
-                The transaction that is signed
-        """
+        """Wraps a transaction"""
         self.tx = tx
         self.signature = signature
         self.pub_key = pub_key
