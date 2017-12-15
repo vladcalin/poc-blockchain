@@ -1,4 +1,5 @@
 import datetime
+import json
 import uuid
 
 from cryptography.hazmat.backends import default_backend
@@ -9,7 +10,6 @@ from cryptography.hazmat.primitives.serialization import load_pem_public_key
 from blockchain.block.content.base import BaseContent
 
 TX_REPR = """Transaction:
-    - id:       {}
     - sender:   {}
     - receiver: {}
     - amount:   {}
@@ -73,12 +73,24 @@ class SignedTransaction(BaseContent):
             The public key for verifying the transaction signature, if 
             available. Is a hex string
     """
+    fields = ['tx', 'signature', 'pub_key']
 
     def __init__(self, tx, signature, pub_key):
         """Wraps a transaction"""
         self.tx = tx
         self.signature = signature
         self.pub_key = pub_key
+
+    def to_binary(self):
+        tx = self.tx.to_dict()
+        return json.dumps({'tx': tx, 'signature': self.signature,
+                           'pub_key': self.pub_key}, sort_keys=True).encode()
+
+    @classmethod
+    def from_binary(cls, binary):
+        data = json.loads(binary.decode())
+        return cls(Transaction.from_binary(data['tx'].encode()), data['signature'],
+                   data['pub_key'])
 
     def __repr__(self):
         return SIGNED_TX_REPR.format(
@@ -88,37 +100,25 @@ class SignedTransaction(BaseContent):
 
 class Transaction(BaseContent):
     TS_FORMAT = '%Y-%m-%d %H:%M:%S:%f'
+    fields = ['sender', 'receiver', 'amount', 'ts']
 
     def __init__(self, sender, receiver, amount, ts=None, id=None):
-        self.id = id or str(uuid.uuid4())
         self.sender = sender
         self.receiver = receiver
         self.amount = amount
-        self.ts = ts or datetime.datetime.now()
-
-    def to_binary(self):
-        parts = [self.id, self.sender, self.receiver, str(self.amount),
-                 self.format_ts(self.ts)]
-        return ';'.join(parts).encode()
-
-    @classmethod
-    def from_binary(cls, binary_string):
-        id, sender, receiver, amount, ts = binary_string.split(b';')
-        amount = float(amount)
-        ts = datetime.datetime.strptime(ts, cls.TS_FORMAT)
-        return cls(sender.decode(),
-                   receiver.decode(),
-                   amount,
-                   ts,
-                   id=id.decode())
-
-    def format_ts(self, ts):
-        return ts.strftime(self.TS_FORMAT)
+        self.ts = ts or datetime.datetime.now().strftime(self.TS_FORMAT)
 
     @classmethod
     def create(cls, sender, receiver, amount):
         return cls(sender, receiver, amount)
 
     def __repr__(self):
-        return TX_REPR.format(
-            self.id, self.sender, self.receiver, self.amount, self.ts)
+        return TX_REPR.format(self.sender, self.receiver, self.amount, self.ts)
+
+    def to_dict(self):
+        return {
+            'sender': self.sender,
+            'receiver': self.receiver,
+            'amount': self.amount,
+            'ts': self.ts
+        }
