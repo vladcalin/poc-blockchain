@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='poc-blockchain',
+    name='pycoin',
     version='0.0.1',
     description='Proof of concept - blockchain',
     packages=find_packages(),
@@ -10,15 +10,8 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'wallet = blockchain.cli.wallet:cli',
-            'netnode = blockchain.cli.node:cli'
+            'wallet = pycoin.wallet:cli',
+            'netnode = pycoin.node:cli'
         ]
     },
-    extras_require={
-        'node': [
-            'flask',
-            'peewee',
-            'gunicorn'
-        ]
-    }
 )
