@@ -16,5 +16,13 @@ class Network:
     NODE_PORT = 64788
 
 
+class Rewards:
+    INITIAL_CAPITAL = 50
+    INITIAL_OWNERS = [
+        'Ft2MXvu4sZUV42zD9AP-FBvB4k5fogDHX5z.py',
+        'WpY7LfGKQCxwBgVIzdSuCaRyelwsa9jKMaP.py'
+    ]
+
+
 ensure_dir(Paths.WALLET_DIR)
 ensure_dir(Paths.BLOCKCHAIN_DATA)

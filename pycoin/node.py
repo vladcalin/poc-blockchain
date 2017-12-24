@@ -27,12 +27,12 @@ def submit_transaction():
     post_data = flask.request.form
     from_addr = post_data.get('from')
     to_addr = post_data.get('to')
-    amount = post_data.get('amount')
+    amount = float(post_data.get('amount'))
     signature = post_data.get('signature')
     public_key = post_data.get('public_key')
-
-    print(from_addr, to_addr, amount, signature, public_key)
-
+    ts = float(post_data.get('ts'))
+    blockchain.submit_transaction(from_addr, to_addr, amount, ts, signature,
+                                  public_key)
     return 'Submitted'
 
 
