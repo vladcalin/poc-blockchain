@@ -3,6 +3,7 @@ import flask
 
 from pycoin.blockchain import Blockchain
 from pycoin.consts import Network
+from pycoin.exceptions import PyCoinException
 
 app = flask.Flask(__name__)
 blockchain = Blockchain()
@@ -31,9 +32,17 @@ def submit_transaction():
     signature = post_data.get('signature')
     public_key = post_data.get('public_key')
     ts = float(post_data.get('ts'))
-    blockchain.submit_transaction(from_addr, to_addr, amount, ts, signature,
-                                  public_key)
+    try:
+        blockchain.submit_transaction(from_addr, to_addr, amount, ts, signature,
+                                      public_key)
+    except PyCoinException as err:
+        return flask.Response(repr(err), status=400)
     return 'Submitted'
+
+
+@app.route('/wallets/info/<address>')
+def wallet_info(address):
+    return flask.jsonify(blockchain.get_address_info(address))
 
 
 @click.group()

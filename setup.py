@@ -6,12 +6,12 @@ setup(
     description='Proof of concept - blockchain',
     packages=find_packages(),
     install_requires=[
-        'cryptography', 'click'
+        'cryptography', 'click', 'peewee'
     ],
     entry_points={
         'console_scripts': [
-            'wallet = pycoin.wallet:cli',
-            'netnode = pycoin.node:cli'
+            'pycoin-wallet = pycoin.wallet:cli',
+            'pycoin-node = pycoin.node:cli'
         ]
     },
 )

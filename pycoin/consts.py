@@ -16,7 +16,7 @@ class Network:
     NODE_PORT = 64788
 
 
-class Rewards:
+class InitialCapital:
     INITIAL_CAPITAL = 50
     INITIAL_OWNERS = [
         'Ft2MXvu4sZUV42zD9AP-FBvB4k5fogDHX5z.py',
