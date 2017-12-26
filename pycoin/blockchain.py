@@ -8,6 +8,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 
 from pycoin.consts import Paths, InitialCapital
 from pycoin.exceptions import NotEnoughBalanceError
+from pycoin.validators import is_valid_address
 from pycoin.wallet import KeySerializer
 from pycoin.persistence.models import Block, Transaction, BlockData, Reward, db
 
@@ -94,6 +95,9 @@ class Blockchain(object):
         signature_binary = bytes.fromhex(signature)
         tx_data = {'from': from_addr, 'to': to_addr, 'amount': amount,
                    'ts': ts, 'public_key': public_key}
+        # validation
+        is_valid_address(from_addr)
+        is_valid_address(to_addr)
         self.check_signature(
             json.dumps(tx_data, sort_keys=True).encode(),
             signature_binary,

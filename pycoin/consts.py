@@ -14,7 +14,7 @@ class Paths:
 
 class Network:
     NODE_PORT = 64788
-
+    
 
 class InitialCapital:
     INITIAL_CAPITAL = 50

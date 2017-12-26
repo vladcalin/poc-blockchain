@@ -14,7 +14,9 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 
+from pycoin.client import BlockchainHttpClient
 from pycoin.consts import Paths, Network
+from pycoin.validators import is_valid_address
 
 
 class Wallet(object):
@@ -49,6 +51,8 @@ class Wallet(object):
             'ts': time.time(),
             'public_key': self.pub_key
         }
+        if not self.password:
+            raise ValueError('Password is empty and cannot sign transaction')
         signature = self.sign(json.dumps(tx_data, sort_keys=True))
         tx_data['signature'] = signature.hex()
         return tx_data
@@ -171,14 +175,37 @@ def wallet_create(name):
 
 @cli.command('inspect')
 @click.argument('name')
-def wallet_inspect(name):
+@click.option('--node', default='127.0.0.1:{}'.format(Network.NODE_PORT))
+def wallet_inspect(name, node):
     if not WalletManager.wallet_exists(name):
-        click.echo(click.style('Wallet does not exist', fg='red'))
-        sys.exit(-1)
-    with open(os.path.join(Paths.WALLET_DIR, name), 'r') as f:
-        data = json.load(f)
-    click.echo(click.style('Wallet info', fg='yellow'))
-    click.echo('address = {}'.format(data['address']))
+        if is_valid_address(name):
+            address = name
+        else:
+            click.echo(
+                click.style('Wallet does not exist and is not a valid address',
+                            fg='red'))
+            sys.exit(-1)
+    else:
+        with open(os.path.join(Paths.WALLET_DIR, name), 'r') as f:
+            data = json.load(f)
+        click.echo(click.style('Wallet info', fg='yellow'))
+        click.echo('address = {}'.format(data['address']))
+        address = data['address']
+    client = BlockchainHttpClient(node)
+    data = client.get_balance(address)
+    click.echo('balance = {}'.format(data['balance']))
+    click.echo('transactions:')
+    for tx in data['transactions']:
+        if 'received' in tx:
+            msg = '+ {} from {}'.format(tx['received'], tx['from'])
+            color = 'green'
+        elif 'reward' in tx:
+            msg = '+ {} (reward)'.format(tx['reward'])
+            color = 'green'
+        else:
+            msg = '- {} to {}'.format(tx['sent'], tx['to'])
+            color = 'red'
+        click.echo(click.style(msg, fg=color))
 
 
 # Transactions
