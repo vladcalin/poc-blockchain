@@ -193,7 +193,12 @@ def wallet_inspect(name, node):
         click.echo('address = {}'.format(data['address']))
         address = data['address']
     client = BlockchainHttpClient(node)
-    data = client.get_balance(address)
+    try:
+        data = client.get_balance(address)
+    except urllib.request.URLError as e:
+        msg = 'Unable to contact node on {}: {}'.format(node, str(e))
+        click.echo(click.style(msg, fg='red'))
+        sys.exit(0)
     click.echo('balance = {}'.format(data['balance']))
     click.echo('transactions:')
     for tx in data['transactions']:
