@@ -30,3 +30,16 @@ class BlockchainHttpClient(object):
             err.message = txt
             raise err
         return json.loads(resp.read().decode())
+
+    def submit_tx(self, tx_info):
+        url = self.get_api_url(self.API_TX_SUBMIT)
+        request = urllib.request.Request(
+            url, data=urllib.parse.urlencode(tx_info).encode())
+        try:
+            resp = urllib.request.urlopen(request)
+        except urllib.request.HTTPError as e:
+            err = e.read().decode()
+            err_obj = ClientError()
+            err_obj.message = err
+            raise err_obj
+        return resp.read().decode()

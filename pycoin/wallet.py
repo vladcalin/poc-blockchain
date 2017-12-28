@@ -16,6 +16,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa, padding
 
 from pycoin.client import BlockchainHttpClient
 from pycoin.consts import Paths, Network
+from pycoin.exceptions import ClientError
 from pycoin.validators import is_valid_address
 
 
@@ -227,14 +228,13 @@ def create_tx(wallet, to, amount, node):
     click.echo('Sender address: {}'.format(wallet.address))
     wallet.password = getpass.getpass('Wallet password: ')
     tx = wallet.create_tx(to, amount)
-    request = urllib.request.Request('http://' + node + '/tx/submit',
-                                     data=urllib.parse.urlencode(tx).encode())
     try:
-        resp = urllib.request.urlopen(request)
-    except urllib.request.HTTPError as e:
-        click.echo(click.style(str(e.read()), fg='red'))
+        client = BlockchainHttpClient(node)
+        resp = client.submit_tx(tx)
+    except ClientError as e:
+        click.echo(click.style(str(e), fg='red'))
         sys.exit(-1)
-    click.echo(click.style(resp.read().decode(), fg='green'))
+    click.echo(click.style(resp, fg='green'))
 
 
 # End Transactions

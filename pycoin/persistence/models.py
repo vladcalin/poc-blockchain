@@ -38,34 +38,34 @@ class Block(BaseModel):
     nonce = peewee.IntegerField(default=0)
     ts = peewee.FloatField()
 
-    def to_dict(self):
-        print(
-            self.index, self.hash, self.previous_hash, self.nonce, self.ts,
-            self.get_data_as_list()
-        )
+    def to_dict(self, verbose=True):
         return {
             'index': self.index,
             'hash': self.hash,
             'previous_hash': self.previous_hash,
             'nonce': self.nonce,
             'timestamp': self.ts,
-            'data': self.get_data_as_list()
+            'data': self.get_data_as_list(full=verbose)
         }
 
-    def get_data_as_list(self):
+    def get_data_as_list(self, full):
         data = []
         for item in self.data:
             if item.transaction is not None:
                 tx = item.transaction
-                data.append({
+                tx_dict = {
                     'type': 'tx',
                     'from': tx.from_addr,
                     'to': tx.from_addr,
                     'amount': tx.amount,
                     'ts': tx.ts,
-                    'signature': tx.signature,
-                    'public_key': tx.public_key
-                })
+                }
+                if full:
+                    tx_dict.update({
+                        'signature': tx.signature,
+                        'public_key': tx.public_key
+                    })
+                data.append(tx_dict)
             else:
                 data.append({
                     'type': 'reward',

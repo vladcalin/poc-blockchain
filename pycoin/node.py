@@ -20,7 +20,9 @@ def block_count():
 def filter_blocks():
     start_index = flask.request.args.get('start')
     end_index = flask.request.args.get('end')
-    return flask.jsonify(blockchain.get_blocks(start_index, end_index))
+    verbose = flask.request.args.get('verbose', False)
+    return flask.jsonify(
+        blockchain.get_blocks(start_index, end_index, verbose=verbose))
 
 
 @app.route('/tx/submit', methods=['post'])

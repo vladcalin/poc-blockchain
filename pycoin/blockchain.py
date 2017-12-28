@@ -3,11 +3,13 @@ import time
 import hashlib
 import os.path
 
+import click
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 
 from pycoin.consts import Paths, InitialCapital
-from pycoin.exceptions import NotEnoughBalanceError
+from pycoin.exceptions import NotEnoughBalanceError, ValidationError
+from pycoin.pow.sha256_hash_pow import Sha256ProofOfWork
 from pycoin.validators import is_valid_address
 from pycoin.wallet import KeySerializer
 from pycoin.persistence.models import Block, Transaction, BlockData, Reward, db
@@ -48,12 +50,14 @@ reward = {
 
 
 class Blockchain(object):
-    TX_PER_BLOCK = 1
+    TX_PER_BLOCK = 5
 
     def __init__(self):
         if self.get_block_count() == 0:
             genesis_block = self.get_genesis_block()
-            hash = self.hash_block(genesis_block)
+            proof_of_work = Sha256ProofOfWork(genesis_block)
+            nonce, hash = proof_of_work.search_for_correct_hash()
+            genesis_block['nonce'] = nonce
             genesis_block['hash'] = hash
             self.persist_block(genesis_block)
         self.tx_queue = []
@@ -61,10 +65,10 @@ class Blockchain(object):
     def get_block_count(self):
         return Block.select().count()
 
-    def get_blocks(self, start_index, end_index):
+    def get_blocks(self, start_index, end_index, *, verbose=False):
         start_index = self.force_int(start_index, default=0)
         end_index = self.force_int(end_index, default=self.get_block_count())
-        return [b.to_dict() for b in
+        return [b.to_dict(verbose=verbose) for b in
                 Block.select().where(Block.index >= start_index,
                                      Block.index < end_index)]
 
@@ -80,7 +84,6 @@ class Blockchain(object):
             'data': self.get_initial_capital_rewards(),
             'previous_hash': '',
             'timestamp': time.time(),
-            'nonce': 0
         }
 
     def hash_block(self, block):
@@ -98,6 +101,8 @@ class Blockchain(object):
         # validation
         is_valid_address(from_addr)
         is_valid_address(to_addr)
+        if from_addr == to_addr:
+            raise ValidationError('Sender and receiver cannot be the same')
         self.check_signature(
             json.dumps(tx_data, sort_keys=True).encode(),
             signature_binary,
@@ -130,7 +135,10 @@ class Blockchain(object):
         if len(self.tx_queue) >= self.TX_PER_BLOCK:
             print('Currently {} transactions in queue. '
                   'Generating new block'.format(len(self.tx_queue)))
+            _start = time.time()
             self.generate_new_block()
+            print('Generated new block in {} seconds'.format(
+                time.time() - _start))
 
     def generate_new_block(self):
         last_block = self.get_last_block()
@@ -142,7 +150,10 @@ class Blockchain(object):
             'nonce': 0,
             'data': transactions
         }
-        new_block['hash'] = self.hash_block(new_block)
+        proof_of_work = Sha256ProofOfWork(new_block)
+        nonce, hash_ = proof_of_work.search_for_correct_hash()
+        new_block['nonce'] = nonce
+        new_block['hash'] = hash_
         self.persist_block(new_block)
         self.tx_queue = []
 

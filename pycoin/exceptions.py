@@ -1,6 +1,9 @@
 class PyCoinException(Exception):
     message = ''
 
+    def __init__(self, msg=''):
+        self.message = msg
+
     def __str__(self):
         return repr(self)
 
@@ -9,19 +12,11 @@ class PyCoinException(Exception):
 
 
 class ValidationError(PyCoinException):
-    message = 'Validation failed: {validation_err}'
+    message = 'Validation failed'
 
 
 class NotEnoughBalanceError(PyCoinException):
     message = "Not enough balance"
-
-
-class InvalidAddressError(ValidationError):
-    def __init__(self, validation_msg):
-        self.msg = validation_msg
-
-    def __str__(self):
-        return self.message.format(validation_err=self.msg)
 
 
 class ClientError(PyCoinException):
