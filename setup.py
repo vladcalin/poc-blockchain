@@ -6,7 +6,7 @@ setup(
     description='Proof of concept - blockchain',
     packages=find_packages(),
     install_requires=[
-        'cryptography', 'click', 'peewee'
+        'pynacl', 'click', 'peewee'
     ],
     entry_points={
         'console_scripts': [
@@ -14,4 +14,9 @@ setup(
             'pycoin-node = pycoin.node:cli'
         ]
     },
+    extras_require={
+        'dev': [
+            'pytest', 'pytest-cov'
+        ]
+    }
 )
