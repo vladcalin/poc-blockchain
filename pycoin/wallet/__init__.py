@@ -39,6 +39,14 @@ def wallet_create(name):
     click.echo('Writing to file')
     with open(os.path.join(Paths.WALLET_DIR, name), 'w') as f:
         json.dump(wallet.to_dict(), f)
+    click.echo('Your wallet was generated using the following mnemonic seed:')
+    click.echo('')
+    click.echo(click.style(wallet.mnemonic_seed, fg='yellow'))
+    click.echo('')
+    click.echo('Write down this seed on a paper. You can use it to '
+               'restore your wallet if you lose the files on this computer, '
+               'you forget your password, or setup your wallet on '
+               'another computer.')
 
 
 @cli.command('inspect')
